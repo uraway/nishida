@@ -8,8 +8,8 @@ module.exports = (robot) ->
     res.reply res.random omikuji
 
   enterReplies = ['Hi', 'こんちは', 'Firing', 'Hello friend.', 'Gotcha', 'I see you']
-  leaveReplies = ['Are you still there?', '目標を見失いました', 'Searching']
-  robot.enter (res) ->
+  leaveReplies = ['Are you still there?', '目標を見失いました', 'Searching', 'お疲れ様でした']
+  robot.hear /おはよう/i, (res) ->
     res.reply res.random enterReplies
-  robot.leave (res) ->
+  robot.hear /お疲れ/i, (res) ->
     res.reply res.random leaveReplies
