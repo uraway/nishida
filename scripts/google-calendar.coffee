@@ -139,14 +139,14 @@ cronJob = require('cron').CronJob;
 
 module.exports = (robot) ->
   # 朝の
-  cronJob = new cronJob(
+  cronJob1 = new cronJob(
     cronTime: "0 * 9 * * 1-5" # 秒 分 時 日 月 週
     start: true # すぐに実行するか
     timeZone: "Asia/Tokyo"
     onTick: ->
       authorize getEvents, robot, "today"
     )
-  cronJob = new cronJob(
+  cronJob2 = new cronJob(
     cronTime: "0 * 17 * * 1-5"
     start: true
     timeZone: "Asia/Tokyo"
