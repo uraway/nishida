@@ -14,7 +14,7 @@ TOKEN_PATH = TOKEN_DIR + 'calendar-api-quickstart.json'
 # @param {Object} credentials The authorization client credentials.
 # @param {function} callback The callback to call with the authorized client.
 
-authorize = (callback, robot) ->
+authorize = (callback, robot, date) ->
   clientSecret = "#{process.env.HUBOT_GOOGLE_OAUTH_CLIENT_SECRET}"
   clientId = "#{process.env.HUBOT_GOOGLE_OAUTH_CLIENT_ID}"
   redirectUrl = "urn:ietf:wg:oauth:2.0:oob"
@@ -23,10 +23,10 @@ authorize = (callback, robot) ->
   # Check if we have previously stored a token.
   fs.readFile TOKEN_PATH, (err, token) ->
     if err
-      getNewToken oauth2Client, callback, robot
+      getNewToken oauth2Client, callback, robot, date
     else
       oauth2Client.credentials = JSON.parse(token)
-      callback oauth2Client, robot
+      callback oauth2Client, robot, date
     return
   return
 
@@ -53,7 +53,7 @@ getNewToken = (oauth2Client, callback, robot) ->
         return
       oauth2Client.credentials = token
       storeToken token
-      callback oauth2Client, robot
+      callback oauth2Client, robot, date
       return
     return
   return
@@ -76,16 +76,32 @@ storeToken = (token) ->
 #
 # @param {google.auth.OAuth2} auth An authorized OAuth2 client.
 
-getEvents = (auth, robot) ->
+getEvents = (auth, robot, date) ->
   moment.locale('ja')
 
-  message = "おはようございます！\n今日の予定は\n"
+  switch date
+    when "today"
+      date_ja = "今日"
+    when "tomorrow"
+      date_ja = "明日"
+    else
+      date_ja = "今日"
+
+  message = "#{date_ja}の予定は\n"
+
+  switch date
+    when "today"
+      num = 0
+    when "tomorrow"
+      num = 1
+    else
+      num = 0
 
   calendar.events.list {
     auth: auth
     calendarId: 'primary'
-    timeMin: moment().startOf('day').toDate().toISOString()
-    timeMax: moment().endOf('day').toDate().toISOString()
+    timeMin: moment().startOf('day').add(num,'days').toDate().toISOString()
+    timeMax: moment().endOf('day').add(num, 'days').toDate().toISOString()
     maxResults: 10
     singleEvents: true
     orderBy: 'startTime'
@@ -113,8 +129,11 @@ getEvents = (auth, robot) ->
     return
   return
 
-
-# hubot部分
+# Description:
+#   google calendar for hubot
+# Commands:
+#   hubot calendar - list up today event
+#   hubot calendar (today|tomorrow) - list up today or tomorrow event
 request = require('request');
 cronJob = require('cron').CronJob;
 
@@ -125,5 +144,22 @@ module.exports = (robot) ->
     start: true # すぐに実行するか
     timeZone: "Asia/Tokyo"
     onTick: ->
-      authorize getEvents, robot
+      authorize getEvents, robot, "today"
     )
+  cronJob = new cronJob(
+    cronTime: "0 * 17 * * 1-5"
+    start: true
+    timeZone: "Asia/Tokyo"
+    onTick: ->
+      authorize getEvents, robot, "tomorrow"
+    )
+
+  robot.respond /calendar$/i, (msg) ->
+    authorize getEvents, robot, "today"
+
+  robot.respond /calendar (today|tomorrow)$/i, (msg) ->
+    switch msg.match[1]
+      when "today"
+        authorize getEvents, robot, "today"
+      when "tomorrow"
+        authorize getEvents, robot, "tomorrow"
