@@ -95,8 +95,7 @@ getEvents = (auth, robot) ->
       return
     events = response.items
     if events.length == 0
-      # console.log 'No upcoming events found.'
-      robot.send {room: "#general"}, "#{message}ありません。"
+      robot.send {room: "#random"}, "#{message}ありません。"
     else
       # console.log 'Upcoming 10 events:'
       i = 0
@@ -110,8 +109,7 @@ getEvents = (auth, robot) ->
         else
           message = "#{message}#{event.summary}\n"
         i++
-      # console.log "#{message}があります。"
-      robot.send {room: "#bot-test"}, "#{message}です。"
+      robot.send {room: "#random"}, "#{message}です。"
     return
   return
 
