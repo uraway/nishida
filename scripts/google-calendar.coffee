@@ -121,7 +121,7 @@ cronJob = require('cron').CronJob;
 module.exports = (robot) ->
   # 朝の
   cronJob = new cronJob(
-    cronTime: "00,30 * * * * *" # 秒 分 時 日 月 週
+    cronTime: "0 * 9 * * 1-5" # 秒 分 時 日 月 週
     start: true # すぐに実行するか
     timeZone: "Asia/Tokyo"
     onTick: ->
