@@ -110,7 +110,7 @@ getEvents = (auth, robot) ->
           message = "#{message}#{event.summary}\n"
         i++
       # console.log "#{message}があります。"
-      robot.send {room: "#general"}, "#{message}です。"
+      robot.send {room: "#bot-test"}, "#{message}です。"
     return
   return
 
