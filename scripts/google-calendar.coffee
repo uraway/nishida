@@ -3,6 +3,7 @@ readline = require('readline')
 google = require('googleapis')
 googleAuth = require('google-auth-library')
 calendar = google.calendar('v3')
+moment = require('moment')
 SCOPES = [ 'https://www.googleapis.com/auth/calendar.readonly' ]
 TOKEN_DIR = (process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE) + '/.credentials/'
 TOKEN_PATH = TOKEN_DIR + 'calendar-api-quickstart.json'
