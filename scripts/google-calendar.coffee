@@ -14,8 +14,8 @@ TOKEN_PATH = TOKEN_DIR + 'calendar-api-quickstart.json'
 # @param {function} callback The callback to call with the authorized client.
 
 authorize = (callback, robot) ->
-  clientSecret = process.env.HUBOT_GOOGLE_OAUTH_CLIENT_ID
-  clientId = process.env.HUBOT_GOOGLE_OAUTH_CLIENT_SECRET
+  clientSecret = process.env.HUBOT_GOOGLE_OAUTH_CLIENT_SECRET
+  clientId = process.env.HUBOT_GOOGLE_OAUTH_CLIENT_ID
   redirectUrl = "urn:ietf:wg:oauth:2.0:oob"
   auth = new googleAuth
   oauth2Client = new (auth.OAuth2)(clientId, clientSecret, redirectUrl)
