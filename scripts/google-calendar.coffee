@@ -4,9 +4,10 @@ google = require('googleapis')
 googleAuth = require('google-auth-library')
 calendar = google.calendar('v3')
 moment = require('moment')
-SCOPES = [ 'https://www.googleapis.com/auth/calendar.readonly' ]
+SCOPES = [ 'https://www.googleapis.com/auth/calendar' ]
 TOKEN_DIR = './.credentials/'
 TOKEN_PATH = TOKEN_DIR + 'calendar-api-quickstart.json'
+require('twix')
 
 # Create an OAuth2 client with the given credentials, and then execute the
 # given callback function.
@@ -14,7 +15,7 @@ TOKEN_PATH = TOKEN_DIR + 'calendar-api-quickstart.json'
 # @param {Object} credentials The authorization client credentials.
 # @param {function} callback The callback to call with the authorized client.
 
-authorize = (callback, robot, date) ->
+authorize = (callback, robot, msg) ->
   clientSecret = "#{process.env.HUBOT_GOOGLE_OAUTH_CLIENT_SECRET}"
   clientId = "#{process.env.HUBOT_GOOGLE_OAUTH_CLIENT_ID}"
   redirectUrl = "urn:ietf:wg:oauth:2.0:oob"
@@ -23,10 +24,10 @@ authorize = (callback, robot, date) ->
   # Check if we have previously stored a token.
   fs.readFile TOKEN_PATH, (err, token) ->
     if err
-      getNewToken oauth2Client, callback, robot, date
+      getNewToken oauth2Client, callback, robot, msg
     else
       oauth2Client.credentials = JSON.parse(token)
-      callback oauth2Client, robot, date
+      callback oauth2Client, robot, msg
     return
   return
 
@@ -37,7 +38,7 @@ authorize = (callback, robot, date) ->
 # @param {getEventsCallback} callback The callback to call with the authorized
 #     client.
 
-getNewToken = (oauth2Client, callback, robot) ->
+getNewToken = (oauth2Client, callback, robot, msg) ->
   authUrl = oauth2Client.generateAuthUrl(
     access_type: 'offline'
     scope: SCOPES)
@@ -53,7 +54,7 @@ getNewToken = (oauth2Client, callback, robot) ->
         return
       oauth2Client.credentials = token
       storeToken token
-      callback oauth2Client, robot, date
+      callback oauth2Client, robot, msg
       return
     return
   return
@@ -80,6 +81,10 @@ getEvents = (auth, robot, date) ->
   moment.locale('ja')
 
   switch date
+    when "morning"
+      date_ja = "おはようございます！今日"
+    when "evening"
+      date_ja = "今日もお疲れ様でした。明日"
     when "today"
       date_ja = "今日"
     when "tomorrow"
@@ -90,6 +95,10 @@ getEvents = (auth, robot, date) ->
   message = "#{date_ja}の予定は\n"
 
   switch date
+    when "morning"
+      num = 0
+    when "evening"
+      num = 1
     when "today"
       num = 0
     when "tomorrow"
@@ -113,12 +122,10 @@ getEvents = (auth, robot, date) ->
     if events.length == 0
       robot.send {room: "#random"}, "#{message}ありません。"
     else
-      # console.log 'Upcoming 10 events:'
       i = 0
       while i < events.length
         event = events[i]
         start = event.start.dateTime or event.start.date
-        # setting time?
         if start.indexOf("T") >= 0
           start = start.split("T")[1].split("+")[0]
           message = "#{message}#{start}に#{event.summary}\n"
@@ -129,11 +136,31 @@ getEvents = (auth, robot, date) ->
     return
   return
 
+createEvents = (auth, robot, msg) ->
+  console.log msg.match[2]
+  calendar.events.quickAdd {
+    auth: auth
+    calendarId: 'primary'
+    text: msg.match[2]
+  }, (error, event) ->
+    if error
+      msg.reply "Error while creating an event!"
+    else
+      range = moment.parseZone(event.start.dateTime || event.start.date).twix(moment.parseZone(event.end.dateTime || event.end.date)).simpleFormat("MMM Do [at] HH:mm")
+      location = "" || event.location
+      msg.reply """
+        OK, I created an event for you:
+            #{event.summary} #{event.htmlLink}
+            When: #{range}
+            Location: #{location}
+      """
+
 # Description:
 #   google calendar for hubot
 # Commands:
 #   hubot calendar - list up today event
 #   hubot calendar (today|tomorrow) - list up today or tomorrow event
+#   hubot create (an) event (quickAdd text) - create an event via quickAdd method
 request = require('request');
 cronJob = require('cron').CronJob;
 
@@ -141,17 +168,17 @@ module.exports = (robot) ->
   # 朝の
   cronJob1 = new cronJob(
     cronTime: "0 * 9 * * 1-5" # 秒 分 時 日 月 週
-    start: true # すぐに実行するか
+    start: true
     timeZone: "Asia/Tokyo"
     onTick: ->
-      authorize getEvents, robot, "today"
+      authorize getEvents, robot, "morning"
     )
   cronJob2 = new cronJob(
     cronTime: "0 * 17 * * 1-5"
     start: true
     timeZone: "Asia/Tokyo"
     onTick: ->
-      authorize getEvents, robot, "tomorrow"
+      authorize getEvents, robot, "evening"
     )
 
   robot.respond /calendar$/i, (msg) ->
@@ -163,3 +190,6 @@ module.exports = (robot) ->
         authorize getEvents, robot, "today"
       when "tomorrow"
         authorize getEvents, robot, "tomorrow"
+
+  robot.respond /create (an)? event (.*)/i, (msg) ->
+    authorize createEvents, robot, msg
