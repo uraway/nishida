@@ -1,3 +1,18 @@
+# Description
+#   A Hubot script for google calendar
+#
+# Dependencies:
+#   None
+#
+# Configuration:
+#   None
+#
+# Commands:
+#   hubot calendar - list up today event
+#   hubot calendar <today|tomorrow> - list up today or tomorrow event
+#   hubot create an event <event> - creates an event with the given quick add text
+#
+
 fs = require('fs')
 readline = require('readline')
 google = require('googleapis')
@@ -156,12 +171,6 @@ createEvents = (auth, robot, msg) ->
             Location: #{location}
       """
 
-# Description:
-#   google calendar for hubot
-# Commands:
-#   hubot calendar - list up today event
-#   hubot calendar (today|tomorrow) - list up today or tomorrow event
-#   hubot create (an) event (quickAdd text) - create an event via quickAdd method
 request = require('request');
 cronJob = require('cron').CronJob;
 
