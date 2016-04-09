@@ -77,10 +77,10 @@ storeToken = (token) ->
 #
 # @param {google.auth.OAuth2} auth An authorized OAuth2 client.
 
-getEvents = (auth, robot, date) ->
+getEvents = (auth, robot, msg) ->
   moment.locale('ja')
 
-  switch date
+  switch msg.match[2] || msg
     when "morning"
       date_ja = "おはようございます！今日"
     when "evening"
@@ -94,7 +94,7 @@ getEvents = (auth, robot, date) ->
 
   message = "#{date_ja}の予定は\n"
 
-  switch date
+  switch msg.match[2] || msg
     when "morning"
       num = 0
     when "evening"
@@ -105,6 +105,8 @@ getEvents = (auth, robot, date) ->
       num = 1
     else
       num = 0
+
+  room = if msg.room then msg.room else 'random'
 
   calendar.events.list {
     auth: auth
@@ -120,7 +122,7 @@ getEvents = (auth, robot, date) ->
       return
     events = response.items
     if events.length == 0
-      robot.send {room: "#random"}, "#{message}ありません。"
+      robot.send {room: room}, "#{message}ありません。"
     else
       i = 0
       while i < events.length
@@ -132,12 +134,11 @@ getEvents = (auth, robot, date) ->
         else
           message = "#{message}#{event.summary}\n"
         i++
-      robot.send {room: "#random"}, "#{message}です。"
+      robot.send {room: room}, "#{message}です。"
     return
   return
 
 createEvents = (auth, robot, msg) ->
-  console.log msg.match[2]
   calendar.events.quickAdd {
     auth: auth
     calendarId: 'primary'
@@ -182,14 +183,10 @@ module.exports = (robot) ->
     )
 
   robot.respond /calendar$/i, (msg) ->
-    authorize getEvents, robot, "today"
+    authorize getEvents, robot, msg
 
   robot.respond /calendar (today|tomorrow)$/i, (msg) ->
-    switch msg.match[1]
-      when "today"
-        authorize getEvents, robot, "today"
-      when "tomorrow"
-        authorize getEvents, robot, "tomorrow"
+    authorize getEvents, robot, msg
 
   robot.respond /create (an)? event (.*)/i, (msg) ->
     authorize createEvents, robot, msg
