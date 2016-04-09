@@ -106,7 +106,7 @@ getEvents = (auth, robot, msg) ->
     else
       num = 0
 
-  room = if msg.room then msg.room else 'random'
+  room = if msg.envelope.room then msg.envelope.room else 'random'
 
   calendar.events.list {
     auth: auth
